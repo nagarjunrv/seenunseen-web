@@ -1,7 +1,8 @@
-export default async function Home() {
-  const maintenance = process.env.MAINTENANCE_MODE === 'true'
+import { supabaseServer } from '@/lib/supabaseServer'
 
-  if (maintenance) {
+export default async function Home() {
+  // maintenance toggle
+  if (process.env.MAINTENANCE_MODE === 'true') {
     return (
       <main style={{ padding: '2rem', textAlign: 'center' }}>
         <h1>🚧 Site under maintenance</h1>
@@ -10,16 +11,27 @@ export default async function Home() {
     )
   }
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/episodes`, {
-    cache: 'no-store',
-  })
-  const { episodes } = await res.json()
+  // direct DB query
+  const { data: episodes, error } = await supabaseServer
+    .from('episode')
+    .select('id, number, title, url')
+    .order('number', { ascending: false })
+    .limit(10)
+
+  if (error) {
+    console.error('Supabase error:', error)
+    return (
+      <main style={{ padding: '2rem' }}>
+        <h2>Failed to load episodes</h2>
+      </main>
+    )
+  }
 
   return (
     <main style={{ padding: '2rem' }}>
       <h1>The Seen and the Unseen</h1>
       <ul>
-        {episodes.map((ep) => (
+        {episodes.map(ep => (
           <li key={ep.id}>
             <a href={ep.url} target="_blank" rel="noopener noreferrer">
               Episode {ep.number}: {ep.title}
