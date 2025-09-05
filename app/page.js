@@ -1,11 +1,18 @@
-import { headers } from 'next/headers'
-
 export default async function Home() {
-  const host = headers().get('host')
-  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http'
-  const baseUrl = `${protocol}://${host}`
+  const maintenance = process.env.MAINTENANCE_MODE === 'true'
 
-  const res = await fetch(`${baseUrl}/api/episodes`, { cache: 'no-store' })
+  if (maintenance) {
+    return (
+      <main style={{ padding: '2rem', textAlign: 'center' }}>
+        <h1>🚧 Site under maintenance</h1>
+        <p>Please check back soon.</p>
+      </main>
+    )
+  }
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/episodes`, {
+    cache: 'no-store',
+  })
   const { episodes } = await res.json()
 
   return (
